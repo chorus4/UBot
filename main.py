@@ -11,7 +11,7 @@ client = commands.Bot( command_prefix = config.COMMAND_PREFIX)
 
 @client.event
 async def on_ready():
-    print('Connected')
+    print('Ready')
 @client.event
 async def on_message(message):
     await client.process_commands(message)
