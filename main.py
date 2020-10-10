@@ -1,9 +1,12 @@
 import discord
 from discord.ext import commands
-import config
 from discord.utils import get
 import youtube_dl
 import os
+
+import config
+
+# Bot
 
 client = commands.Bot( command_prefix = config.COMMAND_PREFIX)
 
@@ -11,10 +14,41 @@ client = commands.Bot( command_prefix = config.COMMAND_PREFIX)
 
 @client.event
 async def on_ready():
-    print('Ready')
+    await client.change_presence(status = discord.Status.idle, activity = discord.Game('Майнкрафт'))
+    print('ready')
+
 @client.event
 async def on_message(message):
     await client.process_commands(message)
+@client.event
+async def on_raw_reaction_remove(payload):
+    channel = client.get_channel(payload.channel_id)
+    message = await channel.fetch_message(payload.message_id)
+    member = get(message.guild.members, id=payload.user_id)
+    try:
+        emoji = str(payload.emoji)
+        role = get(message.guild.roles, id=config.ROLES[emoji])
+        await member.remove_roles(role)
+    except KeyError as e:
+        print('[EROR] KeyError, no role found for ' + emoji)
+@client.event
+async def on_raw_reaction_add(payload):
+    channel = client.get_channel(payload.channel_id)
+    message = await channel.fetch_message(payload.message_id)
+    member = get(message.guild.members, id=payload.user_id)
+    try:
+        emoji = str(payload.emoji)
+        role = get(message.guild.roles, id=config.ROLES[emoji])
+        if(len([i for i in member.roles if i.id not in config.EXCROLES]) <= config.MAX_ROLES_PER_USER):
+            await member.add_roles(role)
+            print('[SUCCESS] User {0.display_name} has been granted with role {1.name}'.format(member, role))
+        else:
+            await message.remove_reaction(payload.emoji, member)
+            print('[ERROR] Too many roles for user {0.display_name}'.format(member))
+    except KeyError as e:
+        print('[EROR] KeyError, no role found for ' + emoji)
+
+
 
 @client.command()
 @commands.has_permissions(administrator = True)
@@ -113,5 +147,22 @@ async def play(ctx, url: str):
     voice.source.volume = 0.07
     nname = name.rsplit('-', 2)
     await ctx.send(f'Сейчас играет: {nname[0]}')
+
+@client.event
+async def on_voice_state_update(member, before, after):
+    if after != None:
+        if after.channel.id == 763803948742082570:
+            for guild in client.guilds:
+                maincategory = get(guild.categories, id=763804505409978399)
+                channel2 = await guild.create_voice_channel(name = f'Канал {member.display_name}', category = maincategory)
+                await channel2.set_permissions(member, connect = True, mute_members = True, manage_channels = True)
+                await member.move_to(channel2)
+                def check(x, y, z):
+                    return len(channel2.members) == 0
+                await client.wait_for('voice_state_update', check = check)
+                await channel2.delete()
+
+
+
 # RUN
 client.run(config.TOKEN)
