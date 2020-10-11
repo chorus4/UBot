@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord.utils import get
+from discord import Activity, ActivityType
 import youtube_dl
 import os
 
@@ -14,8 +15,8 @@ client = commands.Bot( command_prefix = config.COMMAND_PREFIX)
 
 @client.event
 async def on_ready():
-    await client.change_presence(status = discord.Status.idle, activity = discord.Game('Майнкрафт'))
     print('ready')
+    await client.change_presence(status = discord.Status.idle, activity = Activity(name = 'ютуб', type = ActivityType.watching))
 
 @client.event
 async def on_message(message):
