@@ -166,8 +166,15 @@ async def on_voice_state_update(member, before, after):
                     return len(channel2.members) == 0
                 await client.wait_for('voice_state_update', check = check)
                 await channel2.delete()
+@client.command()
+async def members(ctx):
+    m = ctx.guild.members
+    count = 0
+    for member in m:
+        await ctx.send(member.name)
+        count += 1
+    await ctx.send(count)
 
 
-print(client)
 # RUN
 client.run(config.TOKEN)
