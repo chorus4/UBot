@@ -16,6 +16,7 @@ client = commands.Bot( command_prefix = config.COMMAND_PREFIX)
 @client.event
 async def on_ready():
     print('ready')
+    # await client.create_invite(max_age = 0, max_uses = 0, unique = True, reason = None, destination = )
     await client.change_presence(status = discord.Status.idle, activity = Activity(name = 'ютуб', type = ActivityType.watching))
 
 @client.event
@@ -49,7 +50,10 @@ async def on_raw_reaction_add(payload):
     except KeyError as e:
         print('[EROR] KeyError, no role found for ' + emoji)
 
-
+@client.command()
+async def ci(ctx):
+    i = await ctx.channel.create_invite(max_age = 0, max_uses = 0, unique = True, reason = None, destination = ctx.message.channel)
+    await ctx.send(i)
 
 @client.command()
 @commands.has_permissions(administrator = True)
@@ -164,6 +168,6 @@ async def on_voice_state_update(member, before, after):
                 await channel2.delete()
 
 
-
+print(client)
 # RUN
 client.run(config.TOKEN)
