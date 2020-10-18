@@ -4,6 +4,8 @@ from discord.utils import get
 from discord import Activity, ActivityType
 import youtube_dl
 import os
+import time
+import qrcode
 
 import config
 
@@ -18,7 +20,31 @@ async def on_ready():
     print('ready')
     # await client.create_invite(max_age = 0, max_uses = 0, unique = True, reason = None, destination = )
     await client.change_presence(status = discord.Status.idle, activity = Activity(name = 'ютуб', type = ActivityType.watching))
-
+    for g in client.guilds:
+        if g.id == 716892499779518475:
+            maincategory = get(g.categories, id=767265493874638888)
+            channel = g.get_channel(767265780773421088)
+            c = 0
+            for member in g.members:
+                c += 1
+            await channel.edit(name = f'На сервере {c} пользователей')
+@client.event
+async def on_member_join(member):
+    await member.send('Hello NewServer')
+    maincategory = get(member.guild.categories, id=767265493874638888)
+    channel = client.get_channel(767265780773421088)
+    c = 0
+    for member in member.guild.members:
+        c += 1
+    await channel.edit(name = f'На сервере {c} пользователей')
+@client.event
+async def on_member_leave(member):
+    maincategory = get(member.guild.categories, id=767265493874638888)
+    channel = client.get_channel(767265780773421088)
+    c = 0
+    for member in member.guild.members:
+        c += 1
+    await channel.edit(name = f'На сервере {c} пользователей')
 @client.event
 async def on_message(message):
     await client.process_commands(message)
@@ -174,6 +200,12 @@ async def members(ctx):
         await ctx.send(member.name)
         count += 1
     await ctx.send(count)
+@client.command()
+async def qr(ctx, *, data):
+    img = qrcode.make(data)
+    img.save('qr-code.png')
+
+    await ctx.send(file = discord.File(fp = 'qr-code.png'))
 
 
 # RUN
