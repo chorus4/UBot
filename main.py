@@ -6,6 +6,7 @@ import youtube_dl
 import os
 import time
 import qrcode
+from random import randint
 
 import config
 
@@ -48,6 +49,10 @@ async def on_member_leave(member):
 @client.event
 async def on_message(message):
     await client.process_commands(message)
+
+    rand = randint(1, 3)
+    if rand == 1:
+        await message.add_reaction("▶")
 @client.event
 async def on_raw_reaction_remove(payload):
     channel = client.get_channel(payload.channel_id)
