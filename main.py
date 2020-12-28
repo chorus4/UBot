@@ -5,10 +5,19 @@ from discord import Activity, ActivityType
 import youtube_dl
 import os
 import time
+import datetime
 import qrcode
 from random import randint
+from gtts import gTTS
+import json
+import asyncio
 
 import config
+
+# VARIABLES
+global member_count
+member_count = 0
+
 
 # Bot
 
@@ -18,57 +27,94 @@ client = commands.Bot( command_prefix = config.COMMAND_PREFIX)
 
 @client.event
 async def on_ready():
-    print('ready')
     # await client.create_invite(max_age = 0, max_uses = 0, unique = True, reason = None, destination = )
-    await client.change_presence(status = discord.Status.idle, activity = Activity(name = 'ютуб', type = ActivityType.watching))
+    print('ready')
+    await client.change_presence(status = discord.Status.idle, activity = Activity(name = 'ютуб', type = ActivityType.watching, url = 'https://youtube.com'))
     for g in client.guilds:
         if g.id == 716892499779518475:
-            maincategory = get(g.categories, id=767265493874638888)
             channel = g.get_channel(767265780773421088)
-            c = 0
-            for member in g.members:
-                c += 1
-            await channel.edit(name = f'На сервере {c} пользователей')
+            member_count = g.member_count
+            # print(g.member_count)
+            await channel.edit(name = f'На сервере {member_count} пользователей', bitrate = 8000, user_limit = 1, sync_permissions = True)
 @client.event
 async def on_member_join(member):
-    await member.send('Hello NewServer')
-    maincategory = get(member.guild.categories, id=767265493874638888)
+    # await member.send('Hello NewServer')
     channel = client.get_channel(767265780773421088)
-    c = 0
-    for member in member.guild.members:
-        c += 1
-    await channel.edit(name = f'На сервере {c} пользователей')
+    member_count += 1
+    await channel.edit(name = f'На сервере {member_count} пользователей', bitrate = 8000, user_limit = 1, sync_permissions = True)
 @client.event
-async def on_member_leave(member):
-    maincategory = get(member.guild.categories, id=767265493874638888)
+async def on_member_remove(member):
+    ch = client.get_channel(765541973997912064)
+    await ch.send(f"{member.name}#{member.discriminator} покинул сервер")
     channel = client.get_channel(767265780773421088)
-    c = 0
-    for member in member.guild.members:
-        c += 1
-    await channel.edit(name = f'На сервере {c} пользователей')
+    member_count += 1
+    await channel.edit(name = f'На сервере {member_count} пользователей', bitrate = 8000, user_limit = 1, sync_permissions = True)
 @client.event
 async def on_message(message):
     await client.process_commands(message)
-
-    rand = randint(1, 3)
+    # rand reaction
+    rand = randint(1, 10)
     if rand == 1:
         await message.add_reaction("▶")
+    # bad words
+    # print(message)
+    for mess in config.BAD_WORDS:
+        if mess in message.content:
+            await message.delete()
+            await message.channel.send('Не пиши плохие слова!')
+    # lvl
+    with open('lvls.json', 'r') as f:
+        users = json.load(f)
+
+    async def update_data(users, user):
+        if not user in users:
+            users[user] = {}
+            users[user]['exp'] = 0
+            users[user]['lvl'] = 1
+    await update_data(users, str(message.author.id))
+    async def add_exp(users, user, exp):
+        users[user]['exp'] += exp
+    await add_exp(users, str(message.author.id), 0.1)
+    async def add_lvl(users, user):
+        exp = users[user]['exp']
+        lvl = users[user]['lvl']
+        if exp > lvl:
+            lvl += 1
+            users[user]['lvl'] = lvl
+            users[user]['exp'] = 0
+            await message.channel.send(f'{message.author.name}#{message.author.discriminator} у тебя уже {lvl} уровень!:partying_face:')
+    await add_lvl(users, str(message.author.id))
+    with open('lvls.json', 'w') as f:
+        json.dump(users, f)
+# @client.event
+# async def on_command_error(ctx, error):
+#     if isinstance(error, commands.MissingPermissions):
+#         await ctx.send(f"{ctx.author.name} у вас нет прав на использование команды!")
+#     if isinstance(error, commands.CommandNotFound):
+#         await ctx.send(f"{ctx.author.name} такой команды не существует! Наберите {config.COMMAND_PREFIX}help")
+#     if isinstance(error, commands.MissingRequiredArgument):
+#         await ctx.send(f"{ctx.author.name} не все аргументы! Попробуйте {ctx.command.usage}")
 @client.event
 async def on_raw_reaction_remove(payload):
     channel = client.get_channel(payload.channel_id)
     message = await channel.fetch_message(payload.message_id)
     member = get(message.guild.members, id=payload.user_id)
+    if member.id == 738798948696719392:
+        return
     try:
         emoji = str(payload.emoji)
         role = get(message.guild.roles, id=config.ROLES[emoji])
         await member.remove_roles(role)
     except KeyError as e:
         print('[EROR] KeyError, no role found for ' + emoji)
+        return
 @client.event
 async def on_raw_reaction_add(payload):
     channel = client.get_channel(payload.channel_id)
     message = await channel.fetch_message(payload.message_id)
     member = get(message.guild.members, id=payload.user_id)
+    if member.id == 738798948696719392:
+        return False
     try:
         emoji = str(payload.emoji)
         role = get(message.guild.roles, id=config.ROLES[emoji])
@@ -80,6 +126,7 @@ async def on_raw_reaction_add(payload):
             print('[ERROR] Too many roles for user {0.display_name}'.format(member))
     except KeyError as e:
         print('[EROR] KeyError, no role found for ' + emoji)
+        return
 
 @client.command()
 async def ci(ctx):
@@ -149,11 +196,18 @@ async def leave(ctx):
         await ctx.send(f'Бот покинул канал: {channel}')
 @client.command()
 async def help(ctx):
-    ctx.message.delete()
+    await ctx.message.delete()
     emb = discord.Embed(title = 'Help')
     emb.add_field(name = f'{config.COMMAND_PREFIX}clear (Только для админов)', value = 'Очистка чата')
+    emb.add_field(name = f'{config.COMMAND_PREFIX}qr', value = 'Создание qr кода')
+    emb.add_field(name = f'{config.COMMAND_PREFIX}say', value = 'Содать аудиофайл с голосом')
+    emb.add_field(name = f'{config.COMMAND_PREFIX}join', value = 'Подключение бота к голосовому каналу')
+    emb.add_field(name = f'{config.COMMAND_PREFIX}leave', value = 'Отключение бота от голосового канала')
+    emb.add_field(name = f'{config.COMMAND_PREFIX}members', value = 'Показать всех учасников сервера')
+    emb.add_field(name = f'{config.COMMAND_PREFIX}ci', value = 'Создание приглашения на сервер')
+    emb.add_field(name = f'{config.COMMAND_PREFIX}time', value = 'Посмотреть текущее время')
     await ctx.channel.send(embed = emb)
-@client.command()
+@client.command(usage = f'{config.COMMAND_PREFIX}play <youtube video url>')
 async def play(ctx, url: str):
     song_there = os.path.isfile('song.mp3')
     try:
@@ -208,10 +262,98 @@ async def members(ctx):
 @client.command()
 async def qr(ctx, *, data):
     img = qrcode.make(data)
-    img.save('qr-code.png')
+    img.save('files/qr-code.png')
 
-    await ctx.send(file = discord.File(fp = 'qr-code.png'))
+    await ctx.send(file = discord.File(fp = 'files/qr-code.png'))
+@client.command()
+async def say(ctx, langg, *, data):
+    song_there = os.path.isfile('text.mp3')
+    try:
+        if song_there:
+            os.remove('files/text.mp3')
+            print('[log] Старый файл удален!')
+    except PermissionError:
+        print('[log] Не удалось удалить файл!')
+    voice = get(client.voice_clients, guild = ctx.guild)
+
+    tts = gTTS(text = data, lang = langg)
+    tts.save("files/text.mp3")
+
+    await ctx.send(file = discord.File(fp = 'files/text.mp3'))
+@client.command()
+async def time(ctx):
+    emb = discord.Embed(title = "Time", colour = discord.Color.green())
+    now = datetime.datetime.now()
+    emb.set_author(name = client.user.name, icon_url = client.user.avatar_url)
+    emb.set_footer(text = ctx.author.name, icon_url = ctx.author.avatar_url)
+    emb.add_field(name = 'Текущее время', value = f'{now.hour}:{now.minute}:{now.second}')
+    emb.set_thumbnail(url = 'https://greenlanddv.ru/kernel/preview.php?file=shop/goods/10627-1.jpg&width=300&height=300&method=add')
+    await ctx.channel.send(embed = emb)
+
+# ECONOMIC
+queue = []
+@client.command()
+async def surprize(ctx):
+    with open("economic.json", "r") as file:
+        money = json.load(file)
+
+    if not str(ctx.author.id) in money:
+        money[str(ctx.author.id)] = {}
+        money[str(ctx.author.id)]['Money'] = 0
+
+    if not str(ctx.author.id) in queue:
+        money[str(ctx.author.id)]['Money'] += 1250
+        await ctx.send(f"{ctx.author} вы получили свои 1250 монет")
+        queue.append(str(ctx.author.id))
+        with open("economic.json", "w") as file:
+            json.dump(money, file)
+        await asyncio.sleep(30)
+        queue.remove(str(ctx.author.id))
+
+    if str(ctx.author.id) in queue:
+        await ctx.send(f"{ctx.author} ты уже получил монеты!")
 
 
+@client.command()
+async def balance(ctx, member:discord.Member = None):
+    if member == ctx.author or member == None:
+        with open("economic.json", "r") as file:
+            money = json.load(file)
+
+        await ctx.send(f'У {ctx.author} {money[str(ctx.author.id)]["Money"]} монет')
+    else:
+        with open("economic.json", "r") as file:
+            money = json.load(file)
+
+        await ctx.send(f'У {member} {money[str(member.id)]["Money"]} монет')
+
+@client.command()
+async def addtoshop(ctx, role: discord.Role, cost:int):
+    with open("economic.json", "r") as file:
+        money = json.load(file)
+
+    if str(role.id) in money['shop']:
+        await ctx.send("Эта роль уже есть в магазине!")
+    elif not str(role.id) in money['shop']:
+        money['shop'][str(role.id)] = {}
+        money['shop'][str(role.id)]['Cost'] = cost
+        money['shop'][str(role.id)]['ID'] = role.id
+        await ctx.send("Роль добавлена в магазин")
+    with open("economic.json", "w") as file:
+        json.dump(money, file)
+
+@client.command()
+async def shop(ctx):
+    with open('economic.json') as file:
+        money = json.load(file)
+    emb = discord.Embed(title = 'Магазин', colour = discord.Color.green())
+    for role_info in money['shop']:
+        role = get(ctx.guild.roles, id = role_info['ID'])
+        print(ctx.message.guild.roles)
+        print(roleid)
+        print(role)
+        emb.add_field(name = f'{role.name}', value = f'Цена: {money["shop"][role]["Cost"]},,,,,<@&{role}>')
+    await ctx.send(embed = emb)
 # RUN
+# if __name__ == '__main__':
 client.run(config.TOKEN)
