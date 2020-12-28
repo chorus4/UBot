@@ -15,8 +15,8 @@ import asyncio
 import config
 
 # VARIABLES
-global member_count
-member_count = 0
+# global member_count
+# member_count = 0
 
 
 # Bot
@@ -325,7 +325,7 @@ async def balance(ctx, member:discord.Member = None):
         with open("economic.json", "r") as file:
             money = json.load(file)
 
-        await ctx.send(f'У {member} {money[str(member.id)]["Money"]} монет')
+        await ctx.send(f'У *{member}* {money[str(member.id)]["Money"]} монет')
 
 @client.command()
 async def addtoshop(ctx, role: discord.Role, cost:int):
@@ -347,13 +347,18 @@ async def shop(ctx):
     with open('economic.json') as file:
         money = json.load(file)
     emb = discord.Embed(title = 'Магазин', colour = discord.Color.green())
-    for role_info in money['shop']:
-        role = get(ctx.guild.roles, id = role_info['ID'])
-        print(ctx.message.guild.roles)
-        print(roleid)
-        print(role)
-        emb.add_field(name = f'{role.name}', value = f'Цена: {money["shop"][role]["Cost"]},,,,,<@&{role}>')
+    for role in money['shop']:
+        # role = get(ctx.guild.roles, id = role_info['ID'])
+        # print(ctx.message.guild.roles)
+        # print(roleid)
+        # print(role)
+        emb.add_field(name = f'Цена: {money["shop"][role]["Cost"]}', value = f'<@&{role}>', inline = False)
     await ctx.send(embed = emb)
+
+@client.command()
+async def buy(ctx, role: discord.Role):
+    with open('economic.json', 'r') as f:
+        money = json.load(f)
 # RUN
 # if __name__ == '__main__':
 client.run(config.TOKEN)
