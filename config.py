@@ -3,7 +3,8 @@ TOKEN = 'NzM4Nzk4OTQ4Njk2NzE5Mzky.XyRKIw.c-WS09cf6M1i6ZVUQqMiD47Hcpo' # bot toke
 COMMAND_PREFIX = '!' # Prefix for command
 
 BAD_WORDS = ['ban',
-            'kick']
+            'kick',
+            'looser']
 
 POST_ID = 716996550022266900
 

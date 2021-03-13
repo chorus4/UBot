@@ -11,6 +11,8 @@ from random import randint
 from gtts import gTTS
 import json
 import asyncio
+from selenium import webdriver
+from threading import Thread
 
 import config
 
@@ -21,9 +23,23 @@ import config
 
 # Bot
 
-client = commands.Bot( command_prefix = config.COMMAND_PREFIX)
+client = commands.Bot(command_prefix = config.COMMAND_PREFIX)
+web = webdriver.Chrome('chromedriver.exe')
 
 @client.remove_command('help')
+
+def youtube_parser():
+    while True:
+        web.get('https://www.youtube.com/channel/UCMLajX5RcAKB1N3sRELMA2g/videos')
+
+        videos = web.find_elements_by_id('video-title')
+        for i in range(len(videos)):
+            print(videos[i].get_attribute('href'))
+
+        # web.quit()
+        time.sleep(5)
+
+Thread(target = youtube_parser).start()
 
 @client.event
 async def on_ready():
@@ -36,6 +52,9 @@ async def on_ready():
             member_count = g.member_count
             # print(g.member_count)
             await channel.edit(name = f'На сервере {member_count} пользователей', bitrate = 8000, user_limit = 1, sync_permissions = True)
+
+    await youtube_parser()
+
 @client.event
 async def on_member_join(member):
     # await member.send('Hello NewServer')
@@ -63,29 +82,30 @@ async def on_message(message):
             await message.delete()
             await message.channel.send('Не пиши плохие слова!')
     # lvl
-    with open('lvls.json', 'r') as f:
-        users = json.load(f)
+    if message.author != client.user:
+        with open('lvls.json', 'r') as f:
+            users = json.load(f)
 
-    async def update_data(users, user):
-        if not user in users:
-            users[user] = {}
-            users[user]['exp'] = 0
-            users[user]['lvl'] = 1
-    await update_data(users, str(message.author.id))
-    async def add_exp(users, user, exp):
-        users[user]['exp'] += exp
-    await add_exp(users, str(message.author.id), 0.1)
-    async def add_lvl(users, user):
-        exp = users[user]['exp']
-        lvl = users[user]['lvl']
-        if exp > lvl:
-            lvl += 1
-            users[user]['lvl'] = lvl
-            users[user]['exp'] = 0
-            await message.channel.send(f'{message.author.name}#{message.author.discriminator} у тебя уже {lvl} уровень!:partying_face:')
-    await add_lvl(users, str(message.author.id))
-    with open('lvls.json', 'w') as f:
-        json.dump(users, f)
+        async def update_data(users, user):
+            if not user in users:
+                users[user] = {}
+                users[user]['exp'] = 0
+                users[user]['lvl'] = 1
+        await update_data(users, str(message.author.id))
+        async def add_exp(users, user, exp):
+            users[user]['exp'] += exp
+        await add_exp(users, str(message.author.id), 0.1)
+        async def add_lvl(users, user):
+            exp = users[user]['exp']
+            lvl = users[user]['lvl']
+            if exp > lvl:
+                lvl += 1
+                users[user]['lvl'] = lvl
+                users[user]['exp'] = 0
+                await message.channel.send(f'{message.author.name}#{message.author.discriminator} у тебя уже {lvl} уровень!:partying_face:')
+        await add_lvl(users, str(message.author.id))
+        with open('lvls.json', 'w') as f:
+            json.dump(users, f)
 # @client.event
 # async def on_command_error(ctx, error):
 #     if isinstance(error, commands.MissingPermissions):
@@ -359,6 +379,55 @@ async def shop(ctx):
 async def buy(ctx, role: discord.Role):
     with open('economic.json', 'r') as f:
         money = json.load(f)
+
+    if str(role.id) in money['shop']:
+        if money['shop'][str(role.id)]['Cost'] <= money[str(ctx.author.id)]['Money']:
+            if not role in ctx.author.roles:
+                for i in money['shop']:
+                    if i == str(role.id):
+                        buy = get(ctx.guild.roles, id = int(i))
+                        await ctx.author.add_roles(buy)
+                        money[str(ctx.author.id)]['Money'] -= money['shop'][str(role.id)]['Cost']
+                        await ctx.send('Вы купили роль 😁!')
+            else:
+                await ctx.send('У вас уже есть роль 😠!!!')
+
+    with open("economic.json", "w") as file:
+        json.dump(money, file)
+
+@client.command()
+async def sell(ctx, role: discord.Role):
+    with open('economic.json', 'r') as f:
+        money = json.load(f)
+
+    if role in ctx.author.roles:
+        if str(role.id) in money['shop']:
+            for i in money['shop']:
+                if i == str(role.id):
+                    buy = get(ctx.guild.roles, id = int(i))
+                    await ctx.author.remove_roles(buy)
+                    money[str(ctx.author.id)]['Money'] += money['shop'][str(role.id)]['Cost']
+                    await ctx.send('Вы продали роль 😉!')
+        else:
+            await ctx.send('У вас нет роли 😒')
+
+@client.command()
+async def off(ctx):
+    exit()
+
+async def youtube_parser():
+    web.get('https://www.youtube.com/channel/UCMLajX5RcAKB1N3sRELMA2g/videos')
+
+    videos = web.find_elements_by_id('video-title')
+    for i in range(len(videos)):
+        print(videos[i].get_attribute('href'))
+
+    web.quit()
+    await asyncio.sleep(0.1)
+    await youtube_parser()
+
+youtube_parser()
+
 # RUN
-# if __name__ == '__main__':
-client.run(config.TOKEN)
+if __name__ == '__main__':
+    client.run(config.TOKEN)
