@@ -1,4 +1,4 @@
-TOKEN = 'NzM4Nzk4OTQ4Njk2NzE5Mzky.XyRKIw.HO3dy1m_eJcLAuQiJyzqHL0UhKM' # bot token
+TOKEN = 'NzM4Nzk4OTQ4Njk2NzE5Mzky.XyRKIw.VhAn3ffzW2hV6ukZK8imUUDnnUA' # bot token
 
 COMMAND_PREFIX = '!' # Prefix for command
 

@@ -8,13 +8,9 @@ services: # Сервисы
     image: python:3.6
     volumes:
       - ./:/usr/scr/app
-      # - ./requirements.txt:/usr/scr/app/requirements.txt
     command: bash -c "
       /usr/local/bin/python -m pip install --upgrade pip
       && cd /usr/scr/app/
       && pip install --no-cache-dir -r ./requirements.txt
       && python ./main.py"
-      # && flask run"
-    # ports:
-    #   - 5000:5000
 
