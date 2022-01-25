@@ -11,7 +11,7 @@ from random import randint
 from gtts import gTTS
 import json
 import asyncio
-from selenium import webdriver
+# from selenium import webdriver
 from threading import Thread
 
 import config
@@ -24,22 +24,22 @@ import config
 # Bot
 
 client = commands.Bot(command_prefix = config.COMMAND_PREFIX)
-web = webdriver.Chrome('chromedriver.exe')
+# web = webdriver.Chrome('./chromedriver.exe')
 
 @client.remove_command('help')
 
-def youtube_parser():
-    while True:
-        web.get('https://www.youtube.com/channel/UCMLajX5RcAKB1N3sRELMA2g/videos')
+# def youtube_parser():
+#     while True:
+#         web.get('https://www.youtube.com/channel/UCMLajX5RcAKB1N3sRELMA2g/videos')
 
-        videos = web.find_elements_by_id('video-title')
-        for i in range(len(videos)):
-            print(videos[i].get_attribute('href'))
+#         videos = web.find_elements_by_id('video-title')
+#         for i in range(len(videos)):
+#             print(videos[i].get_attribute('href'))
 
-        # web.quit()
-        time.sleep(5)
+#         # web.quit()
+#         time.sleep(5)
 
-Thread(target = youtube_parser).start()
+# Thread(target = youtube_parser).start()
 
 @client.event
 async def on_ready():
@@ -415,18 +415,18 @@ async def sell(ctx, role: discord.Role):
 async def off(ctx):
     exit()
 
-async def youtube_parser():
-    web.get('https://www.youtube.com/channel/UCMLajX5RcAKB1N3sRELMA2g/videos')
+# async def youtube_parser():
+#     web.get('https://www.youtube.com/channel/UCMLajX5RcAKB1N3sRELMA2g/videos')
 
-    videos = web.find_elements_by_id('video-title')
-    for i in range(len(videos)):
-        print(videos[i].get_attribute('href'))
+#     videos = web.find_elements_by_id('video-title')
+#     for i in range(len(videos)):
+#         print(videos[i].get_attribute('href'))
 
-    web.quit()
-    await asyncio.sleep(0.1)
-    await youtube_parser()
+#     web.quit()
+#     await asyncio.sleep(0.1)
+#     await youtube_parser()
 
-youtube_parser()
+# youtube_parser()
 
 # RUN
 if __name__ == '__main__':
