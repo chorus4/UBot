@@ -53,7 +53,7 @@ async def on_ready():
             # print(g.member_count)
             await channel.edit(name = f'На сервере {member_count} пользователей', bitrate = 8000, user_limit = 1, sync_permissions = True)
 
-    await youtube_parser()
+    # await youtube_parser()
 
 @client.event
 async def on_member_join(member):
