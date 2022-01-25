@@ -13,4 +13,6 @@ services: # Сервисы
       && cd /usr/scr/app/
       && pip install --no-cache-dir -r ./requirements.txt
       && python ./main.py"
+    env_file:
+      - token.env
 

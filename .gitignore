@@ -164,4 +164,6 @@ $RECYCLE.BIN/
 site.py
 oauth.py
 
+token.env
+
 #start.cmd

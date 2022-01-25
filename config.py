@@ -1,4 +1,6 @@
-TOKEN = 'NzM4Nzk4OTQ4Njk2NzE5Mzky.XyRKIw.VhAn3ffzW2hV6ukZK8imUUDnnUA' # bot token
+import os
+
+TOKEN = os.getenv('TOKEN') # bot token
 
 COMMAND_PREFIX = '!' # Prefix for command
 
